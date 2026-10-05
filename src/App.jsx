@@ -1,4 +1,21 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
+import "./App.css";
+
+import demo from "./assets/mobile.png";
+import laptopImg from "./assets/laptop.png";
+import headphoneImg from "./assets/headphone.png";
+import keyboardImg from "./assets/keyboard.png";
+import mouseImg from "./assets/mouse.png";
+import controllerImg from "./assets/controller.png";
+import sneakersImg from "./assets/sneakers.png";
+import jacketImg from "./assets/denim-jacket.png";
+import thermosImg from "./assets/thermos.png";
+import lampImg from "./assets/led-lamp.png";
+import backpackImg from "./assets/backpack.png";
+import watchImg from "./assets/smart-watch.png";
+
+import { getProfile } from "./services/api";
+
 
 const products = [
   {
@@ -9,6 +26,7 @@ const products = [
     oldPrice: 42999,
     rating: 4.6,
     reviews: 1248,
+    image: demo,
     emoji: "📱",
     badge: "Best Seller",
     description:
@@ -22,6 +40,7 @@ const products = [
     oldPrice: 84999,
     rating: 4.8,
     reviews: 642,
+    image: laptopImg,
     emoji: "💻",
     badge: "Top Rated",
     description:
@@ -35,6 +54,7 @@ const products = [
     oldPrice: 3999,
     rating: 4.4,
     reviews: 2891,
+    image: headphoneImg,
     emoji: "🎧",
     badge: "Deal",
     description:
@@ -48,6 +68,7 @@ const products = [
     oldPrice: 4499,
     rating: 4.5,
     reviews: 876,
+    image: keyboardImg,
     emoji: "⌨️",
     badge: "Popular",
     description:
@@ -61,6 +82,7 @@ const products = [
     oldPrice: 2199,
     rating: 4.5,
     reviews: 1352,
+    image: mouseImg,
     emoji: "🖱️",
     badge: "Deal",
     description:
@@ -74,6 +96,7 @@ const products = [
     oldPrice: 3999,
     rating: 4.3,
     reviews: 923,
+    image: sneakersImg,
     emoji: "👟",
     badge: "Trending",
     description:
@@ -87,6 +110,7 @@ const products = [
     oldPrice: 3299,
     rating: 4.2,
     reviews: 421,
+    image: jacketImg,
     emoji: "🧥",
     badge: "New",
     description:
@@ -100,6 +124,7 @@ const products = [
     oldPrice: 1299,
     rating: 4.7,
     reviews: 1823,
+    image: thermosImg,
     emoji: "🥤",
     badge: "Best Seller",
     description:
@@ -113,6 +138,7 @@ const products = [
     oldPrice: 1899,
     rating: 4.4,
     reviews: 612,
+    image: lampImg,
     emoji: "💡",
     badge: "Deal",
     description:
@@ -126,6 +152,7 @@ const products = [
     oldPrice: 2499,
     rating: 4.5,
     reviews: 735,
+    image: backpackImg,
     emoji: "🎒",
     badge: "Popular",
     description:
@@ -139,6 +166,7 @@ const products = [
     oldPrice: 4999,
     rating: 4.6,
     reviews: 534,
+    image: controllerImg,
     emoji: "🎮",
     badge: "Top Rated",
     description:
@@ -152,6 +180,7 @@ const products = [
     oldPrice: 6999,
     rating: 4.5,
     reviews: 1540,
+    image: watchImg,
     emoji: "⌚",
     badge: "Trending",
     description:
@@ -176,6 +205,39 @@ function formatPrice(value) {
 }
 
 function App() {
+  useEffect(() => {
+    const token = localStorage.getItem("securemart_token");
+
+    if (token) {
+      getProfile()
+        .then((data) => {
+          console.log("Backend connection successful:", data);
+        })
+        .catch((error) => {
+          console.error(
+            "Backend connection failed:",
+            error.message
+          );
+        });
+    }
+  }, []);
+    const toastTimerRef = useRef(null);
+    useEffect(() => {
+    const token = localStorage.getItem("securemart_token");
+
+    if (token) {
+      getProfile()
+        .then((data) => {
+          console.log("Backend connection successful:", data);
+        })
+        .catch((error) => {
+          console.error(
+            "Backend connection failed:",
+            error.message
+          );
+        });
+    }
+  }, []);
   const [activeCategory, setActiveCategory] = useState("All");
   const [search, setSearch] = useState("");
   const [cart, setCart] = useState([]);
@@ -186,20 +248,35 @@ function App() {
   const [showMenu, setShowMenu] = useState(false);
   const [sort, setSort] = useState("featured");
   const [toast, setToast] = useState("");
+  const [heroSlide, setHeroSlide] = useState(0);
+
+  /* =========================================================
+     HERO SLIDESHOW
+     Changes product every 2.5 seconds
+     ========================================================= */
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setHeroSlide((current) => (current + 1) % products.length);
+    }, 2500);
+
+    return () => clearInterval(interval);
+  }, []);
 
   const filteredProducts = useMemo(() => {
     let result = products.filter((product) => {
-      const matchesCategory =
-        activeCategory === "All" || product.category === activeCategory;
+      const categoryMatch =
+        activeCategory === "All" ||
+        product.category === activeCategory;
 
       const searchText = search.toLowerCase().trim();
 
-      const matchesSearch =
+      const searchMatch =
         !searchText ||
         product.name.toLowerCase().includes(searchText) ||
         product.category.toLowerCase().includes(searchText);
 
-      return matchesCategory && matchesSearch;
+      return categoryMatch && searchMatch;
     });
 
     if (sort === "price-low") {
@@ -217,7 +294,10 @@ function App() {
     return result;
   }, [activeCategory, search, sort]);
 
-  const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+  const cartCount = cart.reduce(
+    (sum, item) => sum + item.quantity,
+    0
+  );
 
   const cartTotal = cart.reduce(
     (sum, item) => sum + item.price * item.quantity,
@@ -225,26 +305,42 @@ function App() {
   );
 
   function showToast(message) {
-    setToast(message);
+  setToast(message);
 
-    setTimeout(() => {
-      setToast("");
-    }, 2500);
+  if (toastTimerRef.current) {
+    clearTimeout(toastTimerRef.current);
   }
+
+  toastTimerRef.current = setTimeout(() => {
+    setToast("");
+    toastTimerRef.current = null;
+  }, 2500);
+}
 
   function addToCart(product) {
     setCart((currentCart) => {
-      const existing = currentCart.find((item) => item.id === product.id);
+      const existing = currentCart.find(
+        (item) => item.id === product.id
+      );
 
       if (existing) {
         return currentCart.map((item) =>
           item.id === product.id
-            ? { ...item, quantity: item.quantity + 1 }
+            ? {
+                ...item,
+                quantity: item.quantity + 1,
+              }
             : item
         );
       }
 
-      return [...currentCart, { ...product, quantity: 1 }];
+      return [
+        ...currentCart,
+        {
+          ...product,
+          quantity: 1,
+        },
+      ];
     });
 
     showToast(`${product.name} added to cart`);
@@ -254,16 +350,21 @@ function App() {
     setCart((currentCart) =>
       currentCart.filter((item) => item.id !== productId)
     );
+
+    showToast("Item removed from cart");
   }
 
   function updateQuantity(productId, change) {
     setCart((currentCart) =>
       currentCart
-        .map((item) =>
-          item.id === productId
-            ? { ...item, quantity: Math.max(1, item.quantity + change) }
-            : item
-        )
+        .map((item) => {
+          if (item.id !== productId) return item;
+
+          return {
+            ...item,
+            quantity: item.quantity + change,
+          };
+        })
         .filter((item) => item.quantity > 0)
     );
   }
@@ -284,23 +385,55 @@ function App() {
 
   function selectCategory(category) {
     setActiveCategory(category);
-    document.getElementById("products")?.scrollIntoView({
-      behavior: "smooth",
-    });
+    setShowMenu(false);
+
+    setTimeout(() => {
+      document.getElementById("products")?.scrollIntoView({
+        behavior: "smooth",
+      });
+    }, 50);
+  }
+
+  function clearSearch() {
+    setSearch("");
+    setActiveCategory("All");
   }
 
   return (
     <div className="app">
-      {/* HEADER */}
+
+      {/* =====================================================
+          HEADER
+          ===================================================== */}
+
       <header className="header">
+
         <div className="header-main">
-          <div className="logo" onClick={() => window.scrollTo({ top: 0 })}>
+
+          <button
+            className="logo"
+            onClick={() => {
+              window.scrollTo({
+                top: 0,
+                behavior: "smooth",
+              });
+
+              setActiveCategory("All");
+              setSearch("");
+            }}
+          >
             <div className="logo-mark">S</div>
+
             <div>
-              <div className="logo-text">Secure<span>Mart</span></div>
-              <div className="logo-subtitle">Shop Smart. Shop Secure.</div>
+              <div className="logo-text">
+                Secure<span>Mart</span>
+              </div>
+
+              <div className="logo-subtitle">
+                Shop Smart. Shop Secure.
+              </div>
             </div>
-          </div>
+          </button>
 
           <button
             className="mobile-menu-btn"
@@ -310,12 +443,18 @@ function App() {
           </button>
 
           <div className="search-wrapper">
+
             <select
               value={activeCategory}
-              onChange={(e) => setActiveCategory(e.target.value)}
+              onChange={(e) =>
+                setActiveCategory(e.target.value)
+              }
             >
               {categories.map((category) => (
-                <option key={category.name} value={category.name}>
+                <option
+                  key={category.name}
+                  value={category.name}
+                >
                   {category.name}
                 </option>
               ))}
@@ -328,15 +467,29 @@ function App() {
               onChange={(e) => setSearch(e.target.value)}
             />
 
-            <button className="search-button">⌕</button>
+            <button
+              className="search-button"
+              onClick={() =>
+                document
+                  .getElementById("products")
+                  ?.scrollIntoView({
+                    behavior: "smooth",
+                  })
+              }
+            >
+              🔍
+            </button>
+
           </div>
 
           <div className="header-actions">
+
             <button
               className="header-action"
               onClick={() => setShowAccount(true)}
             >
               <span className="action-icon">👤</span>
+
               <span>
                 <small>Hello, Sign in</small>
                 <strong>Account</strong>
@@ -345,15 +498,29 @@ function App() {
 
             <button
               className="header-action wishlist-header"
-              onClick={() => showToast(`${wishlist.length} items in wishlist`)}
+              onClick={() =>
+                showToast(
+                  `${wishlist.length} ${
+                    wishlist.length === 1
+                      ? "item"
+                      : "items"
+                  } in wishlist`
+                )
+              }
             >
-              <span className="action-icon">♡</span>
+              <span className="action-icon">
+                {wishlist.length > 0 ? "♥" : "♡"}
+              </span>
+
               <span>
                 <small>My</small>
                 <strong>Wishlist</strong>
               </span>
+
               {wishlist.length > 0 && (
-                <b className="count-badge">{wishlist.length}</b>
+                <b className="count-badge">
+                  {wishlist.length}
+                </b>
               )}
             </button>
 
@@ -363,41 +530,110 @@ function App() {
             >
               <span className="cart-icon">🛒</span>
               <span>Cart</span>
+
               {cartCount > 0 && (
-                <b className="cart-count">{cartCount}</b>
+                <b className="cart-count">
+                  {cartCount}
+                </b>
               )}
             </button>
+
           </div>
         </div>
 
-        <nav className={`navigation ${showMenu ? "navigation-open" : ""}`}>
-          <button onClick={() => setShowMenu(false)}>☰ All</button>
-          <button onClick={() => selectCategory("Electronics")}>
+        <nav
+          className={`navigation ${
+            showMenu ? "navigation-open" : ""
+          }`}
+        >
+          <button
+            onClick={() => {
+              setActiveCategory("All");
+              setSearch("");
+              setShowMenu(false);
+
+              window.scrollTo({
+                top: 0,
+                behavior: "smooth",
+              });
+            }}
+          >
+            ☰ All
+          </button>
+
+          <button
+            onClick={() => selectCategory("Electronics")}
+          >
             Electronics
           </button>
-          <button onClick={() => selectCategory("Gaming")}>Gaming</button>
-          <button onClick={() => selectCategory("Fashion")}>Fashion</button>
-          <button onClick={() => selectCategory("Home")}>Home & Kitchen</button>
-          <button onClick={() => showToast("Today's deals opened")}>
+
+          <button
+            onClick={() => selectCategory("Gaming")}
+          >
+            Gaming
+          </button>
+
+          <button
+            onClick={() => selectCategory("Fashion")}
+          >
+            Fashion
+          </button>
+
+          <button
+            onClick={() => selectCategory("Home")}
+          >
+            Home & Kitchen
+          </button>
+
+          <button
+            onClick={() =>
+              showToast("Today's deals opened")
+            }
+          >
             Today's Deals
           </button>
-          <button onClick={() => showToast("Best sellers opened")}>
+
+          <button
+            onClick={() =>
+              showToast("Best sellers opened")
+            }
+          >
             Best Sellers
           </button>
-          <button onClick={() => showToast("New arrivals opened")}>
+
+          <button
+            onClick={() =>
+              showToast("New arrivals opened")
+            }
+          >
             New Arrivals
           </button>
-          <button onClick={() => showToast("Customer service opened")}>
+
+          <button
+            onClick={() =>
+              showToast("Customer service opened")
+            }
+          >
             Customer Service
           </button>
         </nav>
+
       </header>
 
-      {/* HERO */}
+      {/* =====================================================
+          HERO
+          ===================================================== */}
+
       <main>
+
         <section className="hero">
+
+          {/* LEFT SIDE */}
           <div className="hero-content">
-            <div className="hero-tag">⚡ SECURE DEALS OF THE DAY</div>
+
+            <div className="hero-tag">
+              ⚡ SECURE DEALS OF THE DAY
+            </div>
 
             <h1>
               Everything you need.
@@ -406,76 +642,82 @@ function App() {
             </h1>
 
             <p>
-              Discover great products from trusted sellers with a shopping
-              experience designed with security in mind.
+              Discover great products from trusted sellers
+              with a shopping experience designed with
+              security in mind.
             </p>
 
-            <div className="hero-buttons">
-              <button
-                className="primary-button"
-                onClick={() => selectCategory("All")}
-              >
-                Shop Now →
-              </button>
-
-              <button
-                className="secondary-button"
-                onClick={() => selectCategory("Electronics")}
-              >
-                Explore Electronics
-              </button>
-            </div>
+            <button
+              className="primary-button"
+              onClick={() => selectCategory("All")}
+            >
+              Shop Now →
+            </button>
 
             <div className="hero-stats">
+
               <div>
                 <strong>50K+</strong>
                 <span>Products</span>
               </div>
+
               <div>
                 <strong>10K+</strong>
                 <span>Happy Customers</span>
               </div>
+
               <div>
                 <strong>500+</strong>
                 <span>Trusted Sellers</span>
               </div>
+
             </div>
+
           </div>
+
+          {/* =================================================
+              RIGHT SIDE PRODUCT SLIDESHOW
+              ================================================= */}
 
           <div className="hero-visual">
-            <div className="floating-card card-one">
-              <span>🔒</span>
-              <div>
-                <strong>Secure Shopping</strong>
-                <small>Your security matters</small>
-              </div>
+
+            <div className="hero-slideshow">
+
+              {products.map((product, index) => (
+                <img
+                  key={product.id}
+                  src={product.image}
+                  alt={product.name}
+                  className={`hero-slide ${
+                    index === heroSlide
+                      ? "hero-slide-active"
+                      : ""
+                  }`}
+                />
+              ))}
+
             </div>
 
-            <div className="hero-product">
-              <div className="hero-product-circle">📱</div>
-              <div className="hero-product-info">
-                <span>FEATURED PRODUCT</span>
-                <h3>Nova X Pro</h3>
-                <strong>{formatPrice(34999)}</strong>
-              </div>
-            </div>
-
-            <div className="floating-card card-two">
-              <span>⚡</span>
-              <div>
-                <strong>Fast Delivery</strong>
-                <small>Across India</small>
-              </div>
-            </div>
           </div>
+
         </section>
 
-        {/* CATEGORIES */}
+        {/* =====================================================
+            CATEGORIES
+            ===================================================== */}
+
         <section className="section">
+
           <div className="section-heading">
+
             <div>
-              <span className="section-label">EXPLORE</span>
+
+              <span className="section-label">
+                EXPLORE
+              </span>
+
               <h2>Shop by Category</h2>
+
             </div>
 
             <button
@@ -484,249 +726,436 @@ function App() {
             >
               View all →
             </button>
+
           </div>
 
           <div className="category-grid">
+
             {categories.slice(1).map((category) => (
               <button
                 className="category-card"
                 key={category.name}
-                onClick={() => selectCategory(category.name)}
+                onClick={() =>
+                  selectCategory(category.name)
+                }
               >
-                <div className="category-icon">{category.icon}</div>
+
+                <div className="category-icon">
+                  {category.icon}
+                </div>
+
                 <h3>{category.name}</h3>
+
                 <span>
-                  {products.filter((p) => p.category === category.name).length}{" "}
+                  {
+                    products.filter(
+                      (p) =>
+                        p.category === category.name
+                    ).length
+                  }{" "}
                   products
                 </span>
+
               </button>
             ))}
+
           </div>
+
         </section>
 
-        {/* SECURITY PROMO */}
+        {/* =====================================================
+            SECURITY
+            ===================================================== */}
+
         <section className="security-banner">
-          <div className="security-icon">🛡️</div>
+
+          <div className="security-icon">
+            🛡️
+          </div>
 
           <div>
-            <span className="section-label">SECURE BY DESIGN</span>
-            <h2>Your shopping security matters to us.</h2>
+
+            <span className="section-label">
+              SECURE BY DESIGN
+            </span>
+
+            <h2>
+              Your shopping security matters to us.
+            </h2>
+
             <p>
-              SecureMart is designed to monitor system activity and protect
-              your shopping experience.
+              SecureMart is designed to monitor system
+              activity and protect your shopping experience.
             </p>
+
           </div>
 
           <button
             className="security-button"
-            onClick={() => showToast("Secure shopping information opened")}
+            onClick={() =>
+              showToast(
+                "Secure shopping information opened"
+              )
+            }
           >
             Learn More →
           </button>
+
         </section>
 
-        {/* PRODUCTS */}
-        <section className="section products-section" id="products">
+        {/* =====================================================
+            PRODUCTS
+            ===================================================== */}
+
+        <section
+          className="section products-section"
+          id="products"
+        >
+
           <div className="section-heading products-heading">
+
             <div>
-              <span className="section-label">DISCOVER</span>
+
+              <span className="section-label">
+                DISCOVER
+              </span>
+
               <h2>Popular Products</h2>
-              <p>{filteredProducts.length} products available</p>
+
+              <p>
+                {filteredProducts.length} products available
+              </p>
+
             </div>
 
             <div className="sort-area">
-              <label htmlFor="sort">Sort by</label>
+
+              <label htmlFor="sort">
+                Sort by
+              </label>
+
               <select
                 id="sort"
                 value={sort}
-                onChange={(e) => setSort(e.target.value)}
+                onChange={(e) =>
+                  setSort(e.target.value)
+                }
               >
-                <option value="featured">Featured</option>
-                <option value="rating">Top Rated</option>
-                <option value="price-low">Price: Low to High</option>
-                <option value="price-high">Price: High to Low</option>
+
+                <option value="featured">
+                  Featured
+                </option>
+
+                <option value="rating">
+                  Top Rated
+                </option>
+
+                <option value="price-low">
+                  Price: Low to High
+                </option>
+
+                <option value="price-high">
+                  Price: High to Low
+                </option>
+
               </select>
+
             </div>
+
           </div>
 
           {filteredProducts.length === 0 ? (
+
             <div className="empty-search">
+
               <div>🔍</div>
+
               <h3>No products found</h3>
-              <p>Try another search term or category.</p>
+
+              <p>
+                Try another search term or category.
+              </p>
+
               <button
                 className="primary-button"
-                onClick={() => {
-                  setSearch("");
-                  setActiveCategory("All");
-                }}
+                onClick={clearSearch}
               >
                 Clear Search
               </button>
+
             </div>
+
           ) : (
+
             <div className="product-grid">
+
               {filteredProducts.map((product) => (
+
                 <ProductCard
                   key={product.id}
                   product={product}
-                  isWishlisted={wishlist.includes(product.id)}
-                  onWishlist={() => toggleWishlist(product)}
-                  onAdd={() => addToCart(product)}
-                  onView={() => setSelectedProduct(product)}
+                  isWishlisted={wishlist.includes(
+                    product.id
+                  )}
+                  onWishlist={() =>
+                    toggleWishlist(product)
+                  }
+                  onAdd={() =>
+                    addToCart(product)
+                  }
+                  onView={() =>
+                    setSelectedProduct(product)
+                  }
                 />
+
               ))}
+
             </div>
+
           )}
+
         </section>
 
-        {/* TRUST SECTION */}
+        {/* =====================================================
+            TRUST
+            ===================================================== */}
+
         <section className="trust-section">
-          <div className="trust-card">
-            <span>🚚</span>
-            <div>
-              <h3>Fast Delivery</h3>
-              <p>Reliable delivery across India</p>
-            </div>
-          </div>
 
-          <div className="trust-card">
-            <span>🔐</span>
-            <div>
-              <h3>Secure Payments</h3>
-              <p>Your payment information is protected</p>
-            </div>
-          </div>
+          <TrustCard
+            icon="🚚"
+            title="Fast Delivery"
+            text="Reliable delivery across India"
+          />
 
-          <div className="trust-card">
-            <span>↩️</span>
-            <div>
-              <h3>Easy Returns</h3>
-              <p>Simple and convenient returns</p>
-            </div>
-          </div>
+          <TrustCard
+            icon="🔐"
+            title="Secure Payments"
+            text="Your payment information is protected"
+          />
 
-          <div className="trust-card">
-            <span>✓</span>
-            <div>
-              <h3>Verified Sellers</h3>
-              <p>Shop with confidence</p>
-            </div>
-          </div>
+          <TrustCard
+            icon="↩️"
+            title="Easy Returns"
+            text="Simple and convenient returns"
+          />
+
+          <TrustCard
+            icon="✓"
+            title="Verified Sellers"
+            text="Shop with confidence"
+          />
+
         </section>
+
       </main>
 
-      {/* FOOTER */}
+      {/* =====================================================
+          FOOTER
+          ===================================================== */}
+
       <footer className="footer">
+
         <div className="footer-main">
+
           <div className="footer-brand">
-            <div className="logo footer-logo">
-              <div className="logo-mark">S</div>
+
+            <div className="footer-logo">
+
+              <div className="logo-mark">
+                S
+              </div>
+
               <div className="logo-text">
                 Secure<span>Mart</span>
               </div>
+
             </div>
 
             <p>
-              A modern e-commerce marketplace designed around a secure,
-              intelligent shopping experience.
+              A modern e-commerce marketplace designed
+              around a secure, intelligent shopping experience.
             </p>
 
             <div className="footer-social">
+
               <span>f</span>
               <span>𝕏</span>
               <span>◎</span>
               <span>in</span>
+
             </div>
+
           </div>
 
-          <div className="footer-column">
-            <h3>Get to Know Us</h3>
-            <button>About SecureMart</button>
-            <button>Careers</button>
-            <button>Press</button>
-            <button>Our Technology</button>
-          </div>
+          <FooterColumn
+            title="Get to Know Us"
+            items={[
+              "About SecureMart",
+              "Careers",
+              "Press",
+              "Our Technology",
+            ]}
+          />
 
-          <div className="footer-column">
-            <h3>Customer Service</h3>
-            <button>Help Center</button>
-            <button>Returns</button>
-            <button>Shipping</button>
-            <button>Contact Us</button>
-          </div>
+          <FooterColumn
+            title="Customer Service"
+            items={[
+              "Help Center",
+              "Returns",
+              "Shipping",
+              "Contact Us",
+            ]}
+          />
 
-          <div className="footer-column">
-            <h3>For Sellers</h3>
-            <button>Sell on SecureMart</button>
-            <button>Seller Center</button>
-            <button>Seller Policies</button>
-            <button>Partner With Us</button>
-          </div>
+          <FooterColumn
+            title="For Sellers"
+            items={[
+              "Sell on SecureMart",
+              "Seller Center",
+              "Seller Policies",
+              "Partner With Us",
+            ]}
+          />
 
-          <div className="footer-column">
-            <h3>Security</h3>
-            <button>Privacy</button>
-            <button>Security Center</button>
-            <button>Report an Issue</button>
-            <button>Terms of Service</button>
-          </div>
+          <FooterColumn
+            title="Security"
+            items={[
+              "Privacy",
+              "Security Center",
+              "Report an Issue",
+              "Terms of Service",
+            ]}
+          />
+
         </div>
 
         <div className="footer-bottom">
-          <span>© 2026 SecureMart. All rights reserved.</span>
-          <span>🔒 Secure shopping experience</span>
+
+          <span>
+            © 2026 SecureMart. All rights reserved.
+          </span>
+
+          <span>
+            🔒 Secure shopping experience
+          </span>
+
         </div>
+
       </footer>
 
-      {/* PRODUCT MODAL */}
+      {/* =====================================================
+          PRODUCT MODAL
+          ===================================================== */}
+
       {selectedProduct && (
+
         <div
           className="modal-overlay"
-          onClick={() => setSelectedProduct(null)}
+          onClick={() =>
+            setSelectedProduct(null)
+          }
         >
+
           <div
             className="product-modal"
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) =>
+              e.stopPropagation()
+            }
           >
+
             <button
               className="modal-close"
-              onClick={() => setSelectedProduct(null)}
+              onClick={() =>
+                setSelectedProduct(null)
+              }
             >
               ×
             </button>
 
             <div className="modal-product-image">
-              <span>{selectedProduct.emoji}</span>
-              <div className="modal-badge">{selectedProduct.badge}</div>
+
+              {selectedProduct.image ? (
+
+                <img
+                  src={selectedProduct.image}
+                  alt={selectedProduct.name}
+                />
+
+              ) : (
+
+                <span>
+                  {selectedProduct.emoji}
+                </span>
+
+              )}
+
+              <div className="modal-badge">
+                {selectedProduct.badge}
+              </div>
+
             </div>
 
             <div className="modal-product-details">
+
               <span className="product-category">
                 {selectedProduct.category}
               </span>
 
-              <h2>{selectedProduct.name}</h2>
+              <h2>
+                {selectedProduct.name}
+              </h2>
 
               <div className="rating">
-                <strong>{selectedProduct.rating}</strong>
+
+                <strong>
+                  {selectedProduct.rating}
+                </strong>
+
                 <span>★</span>
-                <small>{selectedProduct.reviews} ratings</small>
+
+                <small>
+                  {selectedProduct.reviews} ratings
+                </small>
+
               </div>
 
-              <p>{selectedProduct.description}</p>
+              <p>
+                {selectedProduct.description}
+              </p>
 
               <div className="modal-price">
-                <strong>{formatPrice(selectedProduct.price)}</strong>
-                <del>{formatPrice(selectedProduct.oldPrice)}</del>
+
+                <strong>
+                  {formatPrice(
+                    selectedProduct.price
+                  )}
+                </strong>
+
+                <del>
+                  {formatPrice(
+                    selectedProduct.oldPrice
+                  )}
+                </del>
+
               </div>
 
               <div className="delivery-box">
+
                 <span>🚚</span>
+
                 <div>
-                  <strong>Free delivery</strong>
-                  <p>Delivery available across India</p>
+
+                  <strong>
+                    Free delivery
+                  </strong>
+
+                  <p>
+                    Delivery available across India
+                  </p>
+
                 </div>
+
               </div>
 
               <button
@@ -738,129 +1167,284 @@ function App() {
               >
                 Add to Cart
               </button>
+
             </div>
+
           </div>
+
         </div>
+
       )}
 
-      {/* CART DRAWER */}
+      {/* =====================================================
+          CART
+          ===================================================== */}
+
       {showCart && (
-        <div className="modal-overlay" onClick={() => setShowCart(false)}>
-          <aside className="cart-drawer" onClick={(e) => e.stopPropagation()}>
+
+        <div
+          className="modal-overlay"
+          onClick={() =>
+            setShowCart(false)
+          }
+        >
+
+          <aside
+            className="cart-drawer"
+            onClick={(e) =>
+              e.stopPropagation()
+            }
+          >
+
             <div className="drawer-header">
+
               <div>
-                <span className="section-label">YOUR SHOPPING</span>
+
+                <span className="section-label">
+                  YOUR SHOPPING
+                </span>
+
                 <h2>Cart</h2>
+
               </div>
 
               <button
                 className="modal-close"
-                onClick={() => setShowCart(false)}
+                onClick={() =>
+                  setShowCart(false)
+                }
               >
                 ×
               </button>
+
             </div>
 
             {cart.length === 0 ? (
+
               <div className="empty-cart">
+
                 <div>🛒</div>
-                <h3>Your cart is empty</h3>
-                <p>Add products to get started.</p>
+
+                <h3>
+                  Your cart is empty
+                </h3>
+
+                <p>
+                  Add products to get started.
+                </p>
+
                 <button
                   className="primary-button"
-                  onClick={() => setShowCart(false)}
+                  onClick={() =>
+                    setShowCart(false)
+                  }
                 >
                   Continue Shopping
                 </button>
+
               </div>
+
             ) : (
+
               <>
+
                 <div className="cart-items">
+
                   {cart.map((item) => (
-                    <div className="cart-item" key={item.id}>
-                      <div className="cart-item-image">{item.emoji}</div>
+
+                    <div
+                      className="cart-item"
+                      key={item.id}
+                    >
+
+                      <div className="cart-item-image">
+
+                        {item.image ? (
+
+                          <img
+                            src={item.image}
+                            alt={item.name}
+                          />
+
+                        ) : (
+
+                          item.emoji
+
+                        )}
+
+                      </div>
 
                       <div className="cart-item-info">
-                        <h3>{item.name}</h3>
-                        <strong>{formatPrice(item.price)}</strong>
+
+                        <h3>
+                          {item.name}
+                        </h3>
+
+                        <strong>
+                          {formatPrice(
+                            item.price
+                          )}
+                        </strong>
 
                         <div className="quantity-control">
+
                           <button
-                            onClick={() => updateQuantity(item.id, -1)}
+                            onClick={() =>
+                              updateQuantity(
+                                item.id,
+                                -1
+                              )
+                            }
                           >
                             −
                           </button>
 
-                          <span>{item.quantity}</span>
+                          <span>
+                            {item.quantity}
+                          </span>
 
                           <button
-                            onClick={() => updateQuantity(item.id, 1)}
+                            onClick={() =>
+                              updateQuantity(
+                                item.id,
+                                1
+                              )
+                            }
                           >
                             +
                           </button>
+
                         </div>
 
                         <button
                           className="remove-button"
-                          onClick={() => removeFromCart(item.id)}
+                          onClick={() =>
+                            removeFromCart(
+                              item.id
+                            )
+                          }
                         >
                           Remove
                         </button>
+
                       </div>
+
                     </div>
+
                   ))}
+
                 </div>
 
                 <div className="cart-summary">
+
                   <div>
-                    <span>Subtotal</span>
-                    <strong>{formatPrice(cartTotal)}</strong>
+
+                    <span>
+                      Subtotal
+                    </span>
+
+                    <strong>
+                      {formatPrice(
+                        cartTotal
+                      )}
+                    </strong>
+
                   </div>
 
                   <div>
-                    <span>Delivery</span>
-                    <strong className="free">FREE</strong>
+
+                    <span>
+                      Delivery
+                    </span>
+
+                    <strong className="free">
+                      FREE
+                    </strong>
+
                   </div>
 
                   <div className="summary-total">
-                    <span>Total</span>
-                    <strong>{formatPrice(cartTotal)}</strong>
+
+                    <span>
+                      Total
+                    </span>
+
+                    <strong>
+                      {formatPrice(
+                        cartTotal
+                      )}
+                    </strong>
+
                   </div>
 
                   <button
                     className="primary-button full-button"
                     onClick={() => {
-                      showToast("Checkout will be connected to the backend later");
+
+                      showToast(
+                        "Checkout will be connected to the backend later"
+                      );
+
                       setShowCart(false);
+
                     }}
                   >
                     Proceed to Checkout
                   </button>
+
                 </div>
+
               </>
+
             )}
+
           </aside>
+
         </div>
+
       )}
 
-      {/* ACCOUNT MODAL */}
+      {/* =====================================================
+          ACCOUNT
+          ===================================================== */}
+
       {showAccount && (
+
         <div
           className="modal-overlay"
-          onClick={() => setShowAccount(false)}
+          onClick={() =>
+            setShowAccount(false)
+          }
         >
-          <div className="account-modal" onClick={(e) => e.stopPropagation()}>
+
+          <div
+            className="account-modal"
+            onClick={(e) =>
+              e.stopPropagation()
+            }
+          >
+
             <button
               className="modal-close"
-              onClick={() => setShowAccount(false)}
+              onClick={() =>
+                setShowAccount(false)
+              }
             >
               ×
             </button>
 
-            <div className="account-icon">👤</div>
+            <div className="account-icon">
+              👤
+            </div>
 
-            <h2>Welcome to SecureMart</h2>
-            <p>Sign in to access your account, orders and wishlist.</p>
+            <h2>
+              Welcome to SecureMart
+            </h2>
+
+            <p>
+              Sign in to access your account,
+              orders and wishlist.
+            </p>
 
             <input
               className="modal-input"
@@ -877,25 +1461,60 @@ function App() {
             <button
               className="primary-button full-button"
               onClick={() => {
-                showToast("Authentication will be connected to FastAPI later");
+
+                showToast(
+                  "Authentication will be connected to FastAPI later"
+                );
+
                 setShowAccount(false);
+
               }}
             >
               Sign In
             </button>
 
             <p className="signup-text">
-              New to SecureMart? <button>Create an account</button>
+
+              New to SecureMart?{" "}
+
+              <button
+                onClick={() =>
+                  showToast(
+                    "Registration will be connected to FastAPI later"
+                  )
+                }
+              >
+                Create an account
+              </button>
+
             </p>
+
           </div>
+
+        </div>
+
+      )}
+
+      {/* =====================================================
+          TOAST
+          ===================================================== */}
+
+      {toast && (
+        <div
+          className="toast"
+          role="status"
+        >
+          {toast}
         </div>
       )}
 
-      {/* TOAST */}
-      {toast && <div className="toast">{toast}</div>}
     </div>
   );
 }
+
+/* =========================================================
+   PRODUCT CARD
+   ========================================================= */
 
 function ProductCard({
   product,
@@ -905,42 +1524,95 @@ function ProductCard({
   onView,
 }) {
   const discount = Math.round(
-    ((product.oldPrice - product.price) / product.oldPrice) * 100
+    ((product.oldPrice - product.price) /
+      product.oldPrice) *
+      100
   );
 
   return (
     <article className="product-card">
+
       <div className="product-image">
+
         <button
           className={`wishlist-button ${
-            isWishlisted ? "wishlisted" : ""
+            isWishlisted
+              ? "wishlisted"
+              : ""
           }`}
           onClick={onWishlist}
-          aria-label="Add to wishlist"
+          aria-label={
+            isWishlisted
+              ? `Remove ${product.name} from wishlist`
+              : `Add ${product.name} to wishlist`
+          }
         >
           {isWishlisted ? "♥" : "♡"}
         </button>
 
-        <span className="product-emoji">{product.emoji}</span>
+        <div className="product-image-frame">
 
-        <div className="product-badge">{product.badge}</div>
+          <img
+            className="product-image-real"
+            src={product.image}
+            alt={product.name}
+          />
+
+        </div>
+
+        <div className="product-badge">
+          {product.badge}
+        </div>
+
       </div>
 
       <div className="product-info">
-        <span className="product-category">{product.category}</span>
 
-        <h3 onClick={onView}>{product.name}</h3>
+        <span className="product-category">
+          {product.category}
+        </span>
+
+        <h3
+          onClick={onView}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              onView();
+            }
+          }}
+        >
+          {product.name}
+        </h3>
 
         <div className="rating">
-          <strong>{product.rating}</strong>
+
+          <strong>
+            {product.rating}
+          </strong>
+
           <span>★</span>
-          <small>({product.reviews})</small>
+
+          <small>
+            ({product.reviews})
+          </small>
+
         </div>
 
         <div className="price-row">
-          <strong>{formatPrice(product.price)}</strong>
-          <del>{formatPrice(product.oldPrice)}</del>
-          <span>{discount}% off</span>
+
+          <strong>
+            {formatPrice(product.price)}
+          </strong>
+
+          <del>
+            {formatPrice(product.oldPrice)}
+          </del>
+
+          <span>
+            {discount}% off
+          </span>
+
         </div>
 
         <p className="delivery-text">
@@ -948,16 +1620,92 @@ function ProductCard({
         </p>
 
         <div className="product-actions">
-          <button className="view-button" onClick={onView}>
+
+          <button
+            className="view-button"
+            onClick={onView}
+          >
             View
           </button>
 
-          <button className="add-button" onClick={onAdd}>
+          <button
+            className="add-button"
+            onClick={onAdd}
+          >
             Add to Cart
           </button>
+
         </div>
+
       </div>
+
     </article>
+  );
+}
+
+/* =========================================================
+   TRUST CARD
+   ========================================================= */
+
+function TrustCard({
+  icon,
+  title,
+  text,
+}) {
+  return (
+    <div className="trust-card">
+
+      <span>
+        {icon}
+      </span>
+
+      <div>
+
+        <h3>
+          {title}
+        </h3>
+
+        <p>
+          {text}
+        </p>
+
+      </div>
+
+    </div>
+  );
+}
+
+/* =========================================================
+   FOOTER COLUMN
+   ========================================================= */
+
+function FooterColumn({
+  title,
+  items,
+}) {
+  return (
+    <div className="footer-column">
+
+      <h3>
+        {title}
+      </h3>
+
+      {items.map((item) => (
+
+        <button
+          key={item}
+          onClick={() =>
+            console.log(
+              `${item} clicked`
+            )
+          }
+        >
+          {item}
+        </button>
+
+      ))}
+
+    </div>
   );
 }
 
