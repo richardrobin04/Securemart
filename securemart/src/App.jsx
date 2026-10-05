@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react";
+import { useEffect } from "react";
+import { getProfile } from "./services/api";
 
 const products = [
   {
@@ -176,6 +178,22 @@ function formatPrice(value) {
 }
 
 function App() {
+    useEffect(() => {
+    const token = localStorage.getItem("securemart_token");
+
+    if (token) {
+      getProfile()
+        .then((data) => {
+          console.log("Backend connection successful:", data);
+        })
+        .catch((error) => {
+          console.error(
+            "Backend connection failed:",
+            error.message
+          );
+        });
+    }
+  }, []);
   const [activeCategory, setActiveCategory] = useState("All");
   const [search, setSearch] = useState("");
   const [cart, setCart] = useState([]);
