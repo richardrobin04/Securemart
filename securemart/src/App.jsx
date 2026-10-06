@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import "./App.css";
 
 import demo from "./assets/mobile.png";
@@ -13,6 +13,9 @@ import thermosImg from "./assets/thermos.png";
 import lampImg from "./assets/led-lamp.png";
 import backpackImg from "./assets/backpack.png";
 import watchImg from "./assets/smart-watch.png";
+
+import { getProfile } from "./services/api";
+
 
 const products = [
   {
@@ -202,6 +205,39 @@ function formatPrice(value) {
 }
 
 function App() {
+  useEffect(() => {
+    const token = localStorage.getItem("securemart_token");
+
+    if (token) {
+      getProfile()
+        .then((data) => {
+          console.log("Backend connection successful:", data);
+        })
+        .catch((error) => {
+          console.error(
+            "Backend connection failed:",
+            error.message
+          );
+        });
+    }
+  }, []);
+    const toastTimerRef = useRef(null);
+    useEffect(() => {
+    const token = localStorage.getItem("securemart_token");
+
+    if (token) {
+      getProfile()
+        .then((data) => {
+          console.log("Backend connection successful:", data);
+        })
+        .catch((error) => {
+          console.error(
+            "Backend connection failed:",
+            error.message
+          );
+        });
+    }
+  }, []);
   const [activeCategory, setActiveCategory] = useState("All");
   const [search, setSearch] = useState("");
   const [cart, setCart] = useState([]);
@@ -269,14 +305,17 @@ function App() {
   );
 
   function showToast(message) {
-    setToast(message);
+  setToast(message);
 
-    clearTimeout(window.__secureMartToastTimer);
-
-    window.__secureMartToastTimer = setTimeout(() => {
-      setToast("");
-    }, 2500);
+  if (toastTimerRef.current) {
+    clearTimeout(toastTimerRef.current);
   }
+
+  toastTimerRef.current = setTimeout(() => {
+    setToast("");
+    toastTimerRef.current = null;
+  }, 2500);
+}
 
   function addToCart(product) {
     setCart((currentCart) => {
