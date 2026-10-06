@@ -14,7 +14,7 @@ import lampImg from "./assets/led-lamp.png";
 import backpackImg from "./assets/backpack.png";
 import watchImg from "./assets/smart-watch.png";
 
-import { getProfile } from "./services/api";
+//import { getProfile } from "./services/api";
 
 
 const products = [
