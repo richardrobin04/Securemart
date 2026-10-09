@@ -8,6 +8,7 @@ import userRoutes from "./routes/userRoutes.js";
 import sessionRoutes from "./routes/sessionRoutes.js";
 import eventRoutes from "./routes/eventRoutes.js";
 import apiRequestLogger from "./middleware/apiRequestLogger.js";
+import securityRoutes from "./routes/securityRoutes.js";
 
 dotenv.config();
 connectDB();
@@ -23,6 +24,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/sessions", sessionRoutes);
 app.use("/api/events", eventRoutes);
+app.use("/api/security", securityRoutes);
 
 // Home route
 app.get("/", (req, res) => {
